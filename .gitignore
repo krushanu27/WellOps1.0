@@ -1,0 +1,20 @@
+# Python virtual environments
+.venv/
+backend/.venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# Secrets
+.env
+
+# Node
+node_modules/
+.next/
+dist/
+
+# IDE / OS
+.vscode/
+.DS_Store
+Thumbs.db
