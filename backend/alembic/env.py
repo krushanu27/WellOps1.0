@@ -1,5 +1,9 @@
 from logging.config import fileConfig
 
+from app.database.session import Base
+import app.database.models  # noqa: F401
+
+
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
@@ -11,6 +15,9 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from app.database.session import Base
+
+target_metadata = Base.metadata
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

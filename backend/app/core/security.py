@@ -37,3 +37,4 @@ def create_access_token(
         "exp": expire,
     }
     return jwt.encode(payload, settings.JWT_SECRET, algorithm=ALGORITHM)
+    

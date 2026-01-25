@@ -15,5 +15,7 @@ def get_db():
     finally:
         db.close()
 
-# Ensure models are registered for metadata
-from app.database import models  # noqa: F401
+# Ensure ORM models are registered for metadata
+import app.users.models  # noqa: F401
+import app.database.models  # noqa: F401
+# import app.surveys.models  # noqa: F401
