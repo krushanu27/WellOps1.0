@@ -37,3 +37,7 @@ def health():
 def health_db(db: Session = Depends(get_db)):
     db.execute(text("SELECT 1"))
     return {"status": "ok", "db": "connected"}
+
+@app.get("/")
+def root():
+    return {"status": "ok", "service": "WellOps1 backend"}

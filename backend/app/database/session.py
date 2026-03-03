@@ -15,6 +15,8 @@ def get_db():
     finally:
         db.close()
 
+print("DATABASE_URL =", settings.DATABASE_URL)
+
 # Ensure ORM models are registered for metadata
 import app.users.models  # noqa: F401
 import app.database.models  # noqa: F401
