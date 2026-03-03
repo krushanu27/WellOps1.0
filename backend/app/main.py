@@ -10,6 +10,9 @@ from app.users.routes import router as users_router
 from app.users.teams_routes import router as teams_router
 from app.surveys.routes import router as surveys_router
 from app.analytics.routes import router as analytics_router
+from app.rbac_test.routes import router as rbac_test_router
+
+
 
 app = FastAPI(title="WellOps API")
 app.add_middleware(
@@ -27,6 +30,7 @@ app.include_router(users_router)
 app.include_router(teams_router)
 app.include_router(surveys_router)
 app.include_router(analytics_router)
+app.include_router(rbac_test_router)
 
 
 @app.get("/health")
