@@ -1,13 +1,16 @@
 from uuid import UUID
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth.deps import get_current_user
-from app.database.models import Survey  # ORM models live here
+from app.database.models import Survey, SurveyVersion, SurveyQuestion, SurveySubmission, SurveyAnswer
 from app.database.session import get_db
-from app.users.models import AuditLog, User
+from app.audit.models import AuditLog
+from app.users.models import User
+from app.surveys.schemas import SubmissionCreate
 
 router = APIRouter(prefix="/surveys", tags=["surveys"])
 
@@ -26,10 +29,7 @@ def create_survey(
         status="DRAFT",
         created_by_user_id=current_user.id,
     )
-
     db.add(survey)
-
-    # Audit log
     db.add(
         AuditLog(
             actor_user_id=current_user.id,
@@ -38,7 +38,6 @@ def create_survey(
             endpoint="/surveys",
         )
     )
-
     db.commit()
     db.refresh(survey)
 
@@ -94,4 +93,92 @@ def get_survey(
         "created_by_user_id": str(survey.created_by_user_id),
         "created_at": survey.created_at,
         "updated_at": survey.updated_at,
+    }
+
+
+@router.get("/{survey_id}/versions/{version_id}/questions")
+def get_questions(
+    survey_id: UUID,
+    version_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    version = db.get(SurveyVersion, version_id)
+    if not version or str(version.survey_id) != str(survey_id):
+        raise HTTPException(404, "Version not found")
+
+    questions = db.execute(
+        select(SurveyQuestion)
+        .where(SurveyQuestion.version_id == version_id)
+        .order_by(SurveyQuestion.display_order)
+    ).scalars().all()
+
+    return [
+        {
+            "id": str(q.id),
+            "question_key": q.question_key,
+            "prompt": q.prompt,
+            "type": q.type,
+            "scale_min": q.scale_min,
+            "scale_max": q.scale_max,
+            "options": q.options,
+            "required": q.required,
+            "display_order": q.display_order,
+        }
+        for q in questions
+    ]
+
+
+@router.post("/{survey_id}/versions/{version_id}/submit", status_code=201)
+def submit_survey(
+    survey_id: UUID,
+    version_id: UUID,
+    body: SubmissionCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    version = db.get(SurveyVersion, version_id)
+    if not version or str(version.survey_id) != str(survey_id):
+        raise HTTPException(404, "Version not found")
+    if version.status != "PUBLISHED":
+        raise HTTPException(400, "Survey version is not published")
+
+    existing = db.execute(
+        select(SurveySubmission).where(
+            SurveySubmission.version_id == version_id,
+            SurveySubmission.user_id == current_user.id,
+        )
+    ).scalars().first()
+    if existing:
+        raise HTTPException(409, "You have already submitted this survey")
+
+    if not current_user.team_id:
+        raise HTTPException(400, "You must be assigned to a team before submitting")
+
+    submission = SurveySubmission(
+        id=uuid.uuid4(),
+        version_id=version_id,
+        user_id=current_user.id,
+        team_id=current_user.team_id,
+    )
+    db.add(submission)
+    db.flush()
+
+    for answer in body.answers:
+        db.add(SurveyAnswer(
+            id=uuid.uuid4(),
+            submission_id=submission.id,
+            question_id=answer.question_id,
+            value=answer.value,
+        ))
+
+    db.commit()
+    db.refresh(submission)
+
+    return {
+        "id": str(submission.id),
+        "version_id": str(submission.version_id),
+        "user_id": str(submission.user_id),
+        "team_id": str(submission.team_id),
+        "submitted_at": submission.submitted_at,
     }

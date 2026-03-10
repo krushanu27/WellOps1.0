@@ -1,0 +1,1 @@
+export { UsersListPage as default } from "../features/users/UsersListPage";

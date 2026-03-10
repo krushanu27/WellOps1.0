@@ -11,6 +11,7 @@ from app.users.teams_routes import router as teams_router
 from app.surveys.routes import router as surveys_router
 from app.analytics.routes import router as analytics_router
 from app.rbac_test.routes import router as rbac_test_router
+from app.analytics.routes import router as analytics_router 
 
 
 
@@ -31,6 +32,7 @@ app.include_router(teams_router)
 app.include_router(surveys_router)
 app.include_router(analytics_router)
 app.include_router(rbac_test_router)
+app.include_router(analytics_router)
 
 
 @app.get("/health")

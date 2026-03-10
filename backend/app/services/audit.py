@@ -1,5 +1,5 @@
 # app/services/audit.py
-from app.users.models import AuditLog
+from app.audit.models import AuditLog
 from app.database.session import SessionLocal
 from datetime import datetime, timezone
 

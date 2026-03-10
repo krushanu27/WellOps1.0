@@ -2,6 +2,7 @@ from logging.config import fileConfig
 
 from app.database.session import Base
 import app.database.models  # noqa: F401
+import app.audit.models  # noqa: F401
 
 
 from sqlalchemy import engine_from_config

@@ -4,7 +4,9 @@ export interface User {
   id: string;
   email: string;
   full_name?: string;
-  is_active?: boolean;
+  role: string;
+  team_id?: string;
+  created_at?: string;
 }
 
 export async function fetchUsers(): Promise<User[]> {

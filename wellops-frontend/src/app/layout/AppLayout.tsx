@@ -12,7 +12,7 @@ const linkStyle = ({ isActive }: { isActive: boolean }) => ({
 });
 
 export function AppLayout() {
-  const { logout } = useAuth();
+  const { logout, role } = useAuth();
   const navigate = useNavigate();
   const title = usePageTitle();
 
@@ -36,12 +36,19 @@ export function AppLayout() {
           <NavLink to="/app/surveys" style={linkStyle}>
             Surveys
           </NavLink>
-          <NavLink to="/app/users" style={linkStyle}>
-            Users
-          </NavLink>
-          <NavLink to="/app/teams" style={linkStyle}>
-            Teams
-          </NavLink>
+
+          {(role === "ADMIN" || role === "MANAGER") && (
+            <NavLink to="/app/users" style={linkStyle}>
+              Users
+            </NavLink>
+          )}
+
+          {(role === "ADMIN" || role === "MANAGER") && (
+            <NavLink to="/app/teams" style={linkStyle}>
+              Teams
+            </NavLink>
+          )}
+
           <NavLink to="/app/analytics" style={linkStyle}>
             Analytics
           </NavLink>

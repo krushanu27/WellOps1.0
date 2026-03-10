@@ -1,0 +1,1 @@
+export { TeamsListPage as default } from "../features/teams/TeamsListPage";
