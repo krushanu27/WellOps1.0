@@ -24,15 +24,18 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
 }
 
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
 h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+  font-size: 1.8em;
+  line-height: 1.2;
 }
 
 button {
@@ -44,7 +47,7 @@ button {
   font-family: inherit;
   background-color: #1a1a1a;
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: border-color 0.25s, background 0.2s;
 }
 button:hover {
   border-color: #646cff;
@@ -57,12 +60,454 @@ button:focus-visible {
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
-    background-color: #ffffff;
+    background-color: #f5f7fa;
   }
   a:hover {
     color: #747bff;
   }
   button {
     background-color: #f9f9f9;
+  }
+}
+
+/* ── Login page ── */
+
+.wo-login-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+.wo-login-card {
+  width: 380px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+.wo-login-header {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff;
+  padding: 28px 28px 20px;
+  text-align: center;
+}
+.wo-login-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: 0.02em;
+}
+.wo-login-header p {
+  margin: 6px 0 0;
+  opacity: 0.8;
+  font-size: 0.88rem;
+}
+.wo-login-body {
+  padding: 28px;
+}
+
+/* ── Sidebar ── */
+
+.wo-sidebar {
+  width: 240px;
+  padding: 20px 14px;
+  border-right: 1px solid rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  background: rgba(0,0,0,0.015);
+}
+.wo-sidebar-brand {
+  font-weight: 700;
+  font-size: 1.15rem;
+  margin-bottom: 20px;
+  padding: 0 10px;
+  letter-spacing: -0.01em;
+}
+.wo-sidebar-nav {
+  display: grid;
+  gap: 2px;
+}
+.wo-sidebar-nav a {
+  display: block;
+  padding: 9px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+.wo-sidebar-nav a:hover {
+  background: rgba(0,0,0,0.06);
+}
+.wo-sidebar-logout {
+  margin-top: auto;
+  padding-top: 16px;
+}
+.wo-sidebar-logout button {
+  width: 100%;
+  font-size: 0.88rem;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.wo-sidebar-logout button:hover {
+  background: rgba(220, 53, 69, 0.08);
+  border-color: rgba(220, 53, 69, 0.3);
+  color: #c62828;
+}
+
+/* ── Forms ── */
+
+.wo-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.15);
+  font-size: 0.95rem;
+  font-family: inherit;
+  background: #fff;
+  color: #213547;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.wo-input:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+.wo-input::placeholder {
+  color: #999;
+}
+.wo-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.wo-field-label {
+  font-size: 0.82rem;
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+/* ── Buttons ── */
+
+.wo-btn-primary {
+  width: 100%;
+  padding: 11px 20px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.wo-btn-primary:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+.wo-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Result cards ── */
+
+.wo-result-card {
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 12px;
+  padding: 18px;
+  margin-top: 16px;
+}
+.wo-result-card--low { border-left: 4px solid #43a047; }
+.wo-result-card--medium { border-left: 4px solid #ff9800; }
+.wo-result-card--high { border-left: 4px solid #e53935; }
+
+/* ── Page header breadcrumb ── */
+
+.wo-breadcrumb {
+  font-size: 0.82rem;
+  padding: 14px 24px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+/* ── Error text ── */
+
+.wo-error-text {
+  color: #c62828;
+  background: #fde8e8;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  margin-bottom: 12px;
+}
+
+/* ── WellOps shared styles ── */
+
+.wo-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 20px;
+}
+.wo-page-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+.wo-page-header .wo-stat {
+  font-size: 0.8rem;
+  opacity: 0.65;
+  background: rgba(128,128,128,0.12);
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+/* table */
+.wo-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid rgba(128,128,128,0.25);
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 0.92rem;
+}
+.wo-table th,
+.wo-table td {
+  text-align: left;
+  padding: 12px 14px;
+}
+.wo-table thead th {
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+  border-bottom: 1px solid rgba(128,128,128,0.18);
+}
+.wo-table tbody tr {
+  transition: background 0.15s;
+}
+.wo-table tbody tr:not(:last-child) td {
+  border-bottom: 1px solid rgba(128,128,128,0.10);
+}
+.wo-table tbody tr:hover {
+  background: rgba(100, 108, 255, 0.06);
+}
+.wo-table tbody tr.wo-row-clickable {
+  cursor: pointer;
+}
+
+/* badges */
+.wo-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.wo-badge--admin {
+  background: #fde8e8;
+  color: #b91c1c;
+}
+.wo-badge--manager {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.wo-badge--employee {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+/* expandable row */
+.wo-expand-row td {
+  padding: 0 14px 14px 14px;
+  background: rgba(100, 108, 255, 0.03);
+}
+.wo-expand-row .wo-expand-inner {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(128,128,128,0.06);
+  font-size: 0.85rem;
+}
+.wo-expand-row .wo-expand-inner ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  list-style: disc;
+}
+.wo-expand-row .wo-expand-inner li {
+  padding: 3px 0;
+}
+
+/* muted text helper */
+.wo-muted {
+  opacity: 0.55;
+  font-size: 0.82rem;
+}
+
+/* dark-mode overrides for badges */
+@media (prefers-color-scheme: dark) {
+  .wo-badge--admin {
+    background: rgba(239, 83, 80, 0.2);
+    color: #ef9a9a;
+  }
+  .wo-badge--manager {
+    background: rgba(66, 165, 245, 0.2);
+    color: #90caf9;
+  }
+  .wo-badge--employee {
+    background: rgba(200, 200, 200, 0.15);
+    color: #bdbdbd;
+  }
+}
+
+/* ── Dashboard cards ── */
+
+.wo-cards-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.wo-card {
+  flex: 1;
+  min-width: 160px;
+  padding: 20px;
+  border: 1px solid rgba(128,128,128,0.2);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+.wo-card--clickable {
+  cursor: pointer;
+}
+.wo-card--clickable:hover {
+  box-shadow: 0 4px 16px rgba(100, 108, 255, 0.12);
+  transform: translateY(-2px);
+}
+
+.wo-card-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.wo-card-label {
+  font-size: 0.85rem;
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 600;
+}
+
+.wo-card-detail {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.78rem;
+  opacity: 0.55;
+}
+
+.wo-card--compact {
+  padding: 14px 18px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+@media (prefers-color-scheme: light) {
+  .wo-card {
+    background: #fff;
+    border-color: rgba(0,0,0,0.1);
+  }
+  .wo-card--clickable:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+}
+
+/* ── Consent banner ── */
+
+.wo-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  border-radius: 10px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  color: #5d4037;
+}
+.wo-banner-content {
+  flex: 1;
+}
+.wo-banner-link {
+  color: #1565c0;
+  cursor: pointer;
+  text-decoration: underline;
+  font-weight: 500;
+}
+.wo-banner-btn {
+  white-space: nowrap;
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: none;
+  background: #43a047;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.wo-banner-btn:hover {
+  background: #388e3c;
+}
+.wo-banner-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Prose content (privacy policy) ── */
+
+.wo-prose h2 {
+  font-size: 1.15rem;
+  margin-top: 28px;
+  margin-bottom: 8px;
+}
+.wo-prose p {
+  line-height: 1.7;
+  margin: 0 0 12px;
+  opacity: 0.88;
+}
+.wo-prose ul {
+  padding-left: 20px;
+  margin: 0 0 12px;
+}
+.wo-prose li {
+  line-height: 1.7;
+  margin-bottom: 4px;
+  opacity: 0.88;
+}
+
+@media (prefers-color-scheme: dark) {
+  .wo-banner {
+    background: rgba(255, 248, 225, 0.08);
+    border-color: rgba(255, 224, 130, 0.3);
+    color: #ffe082;
+  }
+  .wo-banner-link {
+    color: #90caf9;
   }
 }

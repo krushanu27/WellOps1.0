@@ -1,12 +1,39 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchUsers } from "./users.api";
+import { fetchTeams } from "../teams/teams.api";
 import type { User } from "./users.api";
+import type { Team } from "../teams/teams.api";
 import { LoadingState, EmptyState, ErrorState } from "../../shared/components/PageState";
 
+function RoleBadge({ role }: { role: string }) {
+  const cls = `wo-badge wo-badge--${role.toLowerCase()}`;
+  return <span className={cls}>{role}</span>;
+}
+
+function formatDate(iso?: string) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export function UsersListPage() {
-  const { data, isLoading, error, refetch } = useQuery({
+  const {
+    data: users,
+    isLoading,
+    isFetching,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["users"],
     queryFn: fetchUsers,
+  });
+
+  const { data: teams } = useQuery({
+    queryKey: ["teams"],
+    queryFn: fetchTeams,
   });
 
   if (isLoading) {
@@ -23,31 +50,50 @@ export function UsersListPage() {
     );
   }
 
-  if (!data || data.length === 0) {
+  if (!users || users.length === 0) {
     return <EmptyState title="No users" message="No users found." />;
+  }
+
+  // Build a team lookup map
+  const teamMap = new Map<string, string>();
+  if (teams) {
+    teams.forEach((t: Team) => teamMap.set(t.id, t.name));
   }
 
   return (
     <div style={{ padding: 24 }}>
-      <h1 style={{ marginTop: 0 }}>Users</h1>
-
-      <div style={{ marginTop: 16, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10 }}>
-        {data.map((u: User, idx) => (
-          <div
-            key={u.id}
-            style={{
-              padding: 12,
-              borderTop: idx === 0 ? "none" : "1px solid rgba(0,0,0,0.08)",
-            }}
-          >
-            <div style={{ fontWeight: 500 }}>{u.full_name || "—"}</div>
-            <div style={{ fontSize: 13, opacity: 0.75 }}>{u.email}</div>
-            <div style={{ fontSize: 12, opacity: 0.6 }}>
-              Status: {u.is_active ? "Active" : "Inactive"}
-            </div>
-          </div>
-        ))}
+      <div className="wo-page-header">
+        <h1>Users</h1>
+        <span className="wo-stat">
+          {isFetching ? "Refreshing…" : `${users.length} user${users.length !== 1 ? "s" : ""}`}
+        </span>
       </div>
+
+      <table className="wo-table">
+        <thead>
+          <tr>
+            <th>Name / Email</th>
+            <th>Role</th>
+            <th>Team</th>
+            <th>Joined</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((u: User) => (
+            <tr key={u.id}>
+              <td>
+                <div style={{ fontWeight: 500 }}>{u.full_name || u.email}</div>
+                {u.full_name && <div className="wo-muted">{u.email}</div>}
+              </td>
+              <td>
+                <RoleBadge role={u.role} />
+              </td>
+              <td>{u.team_id ? teamMap.get(u.team_id) || "—" : "—"}</td>
+              <td className="wo-muted">{formatDate(u.created_at)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

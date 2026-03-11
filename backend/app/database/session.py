@@ -20,4 +20,5 @@ def get_db():
 # Ensure ORM models are registered for metadata
 import app.users.models  # noqa: F401
 import app.database.models  # noqa: F401
+import app.ethics.models  # noqa: F401
 # import app.surveys.models  # noqa: F401

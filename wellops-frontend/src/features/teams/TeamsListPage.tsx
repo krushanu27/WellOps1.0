@@ -1,13 +1,58 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchTeams } from "./teams.api";
-import type { Team } from "./teams.api";
+import { fetchTeams, fetchTeamUsers } from "./teams.api";
+import type { Team, TeamUser } from "./teams.api";
 import { LoadingState, EmptyState, ErrorState } from "../../shared/components/PageState";
 
+function RoleBadge({ role }: { role: string }) {
+  const cls = `wo-badge wo-badge--${role.toLowerCase()}`;
+  return <span className={cls}>{role}</span>;
+}
+
+function TeamMembersRow({ teamId, colSpan }: { teamId: string; colSpan: number }) {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["team-users", teamId],
+    queryFn: () => fetchTeamUsers(teamId),
+  });
+
+  return (
+    <tr className="wo-expand-row">
+      <td colSpan={colSpan}>
+        <div className="wo-expand-inner">
+          <strong>Members</strong>
+          {isLoading && <div className="wo-muted">Loading members…</div>}
+          {error && <div style={{ color: "darkred" }}>Failed to load members.</div>}
+          {data && data.length === 0 && <div className="wo-muted">No members in this team.</div>}
+          {data && data.length > 0 && (
+            <ul>
+              {data.map((u: TeamUser) => (
+                <li key={u.id}>
+                  {u.email} <RoleBadge role={u.role} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export function TeamsListPage() {
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["teams"],
     queryFn: fetchTeams,
   });
+
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (isLoading) {
     return <LoadingState title="Teams" message="Loading teams…" />;
@@ -27,26 +72,51 @@ export function TeamsListPage() {
     return <EmptyState title="No teams" message="No teams found." />;
   }
 
+  const colCount = 4;
+
   return (
     <div style={{ padding: 24 }}>
-      <h1 style={{ marginTop: 0 }}>Teams</h1>
-
-      <div style={{ marginTop: 16, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10 }}>
-        {data.map((t: Team, idx) => (
-          <div
-            key={t.id}
-            style={{
-              padding: 12,
-              borderTop: idx === 0 ? "none" : "1px solid rgba(0,0,0,0.08)",
-            }}
-          >
-            <div style={{ fontWeight: 500 }}>{t.name}</div>
-            {t.description && (
-              <div style={{ fontSize: 13, opacity: 0.75 }}>{t.description}</div>
-            )}
-          </div>
-        ))}
+      <div className="wo-page-header">
+        <h1>Teams</h1>
+        <span className="wo-stat">
+          {isFetching ? "Refreshing…" : `${data.length} team${data.length !== 1 ? "s" : ""}`}
+        </span>
       </div>
+
+      <table className="wo-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Team Name</th>
+            <th>Department</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((t: Team) => {
+            const isOpen = expandedId === t.id;
+            return (
+              <>
+                <tr
+                  key={t.id}
+                  className="wo-row-clickable"
+                  onClick={() => setExpandedId(isOpen ? null : t.id)}
+                >
+                  <td style={{ width: 32, textAlign: "center" }}>
+                    {isOpen ? "▾" : "▸"}
+                  </td>
+                  <td style={{ fontWeight: 500 }}>{t.name}</td>
+                  <td>{t.department}</td>
+                  <td className="wo-muted">{formatDate(t.created_at)}</td>
+                </tr>
+                {isOpen && (
+                  <TeamMembersRow key={`${t.id}-members`} teamId={t.id} colSpan={colCount} />
+                )}
+              </>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }

@@ -36,7 +36,6 @@ export default function PredictPage() {
       setForm((s) => ({ ...s, [key]: e.target.value }));
     };
 
-  // ALWAYS returns a number (never undefined)
   const toNum = (s: string, fallback = 0) => {
     const n = Number(s);
     return Number.isFinite(n) ? n : fallback;
@@ -71,63 +70,128 @@ export default function PredictPage() {
     }
   }
 
+  const levelClass = data
+    ? `wo-result-card wo-result-card--${data.risk_level.toLowerCase()}`
+    : "";
+
   return (
-    <div style={{ maxWidth: 760, margin: "0 auto", padding: 16 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700 }}>Analytics Prediction</h1>
-      <p style={{ opacity: 0.8 }}>
-        Rule-based placeholder scoring. Later you can swap in a real ML model without changing the API contract.
-      </p>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
-        <Field label="Workload (0-10)" value={form.workload} onChange={onChange("workload")} />
-        <Field label="Overtime hours (0-40)" value={form.overtime_hours} onChange={onChange("overtime_hours")} />
-        <Field label="Stress score (0-10)" value={form.stress_score} onChange={onChange("stress_score")} />
-        <Field label="Sleep quality (0-10)" value={form.sleep_quality} onChange={onChange("sleep_quality")} />
-        <Field label="Mood (0-10)" value={form.mood} onChange={onChange("mood")} />
+    <div style={{ maxWidth: 760, padding: 24 }}>
+      <div className="wo-page-header">
+        <div>
+          <h1 style={{ marginBottom: 4 }}>Burnout Prediction</h1>
+          <p className="wo-muted" style={{ margin: 0 }}>
+            Enter wellness metrics to predict burnout and productivity risk
+          </p>
+        </div>
       </div>
 
-      <h3 style={{ marginTop: 18 }}>Optional overrides (ADMIN/MANAGER only)</h3>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field label="team_id" value={form.team_id} onChange={onChange("team_id")} />
-        <Field label="user_id" value={form.user_id} onChange={onChange("user_id")} />
-        <Field label="survey_version_id" value={form.survey_version_id} onChange={onChange("survey_version_id")} />
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 4,
+          marginTop: 16,
+        }}
+      >
+        <Field
+          label="Workload (0–10)"
+          value={form.workload}
+          onChange={onChange("workload")}
+        />
+        <Field
+          label="Overtime hours (0–40)"
+          value={form.overtime_hours}
+          onChange={onChange("overtime_hours")}
+        />
+        <Field
+          label="Stress score (0–10)"
+          value={form.stress_score}
+          onChange={onChange("stress_score")}
+        />
+        <Field
+          label="Sleep quality (0–10)"
+          value={form.sleep_quality}
+          onChange={onChange("sleep_quality")}
+        />
+        <Field
+          label="Mood (0–10)"
+          value={form.mood}
+          onChange={onChange("mood")}
+        />
       </div>
 
-      <div style={{ marginTop: 16 }}>
+      <h3 style={{ marginTop: 20, fontSize: "0.9rem", opacity: 0.7 }}>
+        Optional overrides (ADMIN / MANAGER only)
+      </h3>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 4 }}>
+        <Field label="Team ID" value={form.team_id} onChange={onChange("team_id")} />
+        <Field label="User ID" value={form.user_id} onChange={onChange("user_id")} />
+        <Field
+          label="Survey Version ID"
+          value={form.survey_version_id}
+          onChange={onChange("survey_version_id")}
+        />
+      </div>
+
+      <div style={{ marginTop: 18 }}>
         <button
+          className="wo-btn-primary"
           onClick={onSubmit}
           disabled={loading}
-          style={{
-            padding: "10px 14px",
-            borderRadius: 10,
-            border: "1px solid #333",
-            cursor: loading ? "not-allowed" : "pointer",
-            fontWeight: 600,
-          }}
+          style={{ width: "auto", padding: "10px 28px" }}
         >
-          {loading ? "Predicting..." : "Predict"}
+          {loading ? "Predicting…" : "Run Prediction"}
         </button>
       </div>
 
       <div style={{ marginTop: 16 }}>
-        {loading && <LoadingState title="Predicting..." message="Crunching the numbers..." />}
+        {loading && (
+          <LoadingState title="Predicting…" message="Crunching the numbers…" />
+        )}
 
-        {!loading && error && <ErrorState title="Prediction failed" message={error} />}
+        {!loading && error && (
+          <ErrorState title="Prediction failed" message={error} />
+        )}
 
         {!loading && !error && !data && (
-          <EmptyState title="No prediction yet" message="Fill the inputs and click Predict." />
+          <EmptyState
+            title="No prediction yet"
+            message="Fill the inputs and click Run Prediction."
+          />
         )}
 
         {data && (
-          <div style={{ border: "1px solid #333", borderRadius: 12, padding: 14, marginTop: 12 }}>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>Risk Level: {data.risk_level}</div>
-            <div style={{ marginTop: 8 }}>
-              Burnout Risk: {(data.burnout_risk_score * 100).toFixed(1)}%
+          <div className={levelClass}>
+            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 10 }}>
+              Risk Level:{" "}
+              <span
+                className={`wo-badge wo-badge--${
+                  data.risk_level === "LOW"
+                    ? "employee"
+                    : data.risk_level === "MEDIUM"
+                    ? "manager"
+                    : "admin"
+                }`}
+                style={{ fontSize: "0.82rem" }}
+              >
+                {data.risk_level}
+              </span>
             </div>
-            <div>
-              Productivity Risk: {(data.productivity_risk_score * 100).toFixed(1)}%
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div>
+                <div className="wo-muted">Burnout Risk</div>
+                <div style={{ fontSize: "1.4rem", fontWeight: 700 }}>
+                  {(data.burnout_risk_score * 100).toFixed(1)}%
+                </div>
+              </div>
+              <div>
+                <div className="wo-muted">Productivity Risk</div>
+                <div style={{ fontSize: "1.4rem", fontWeight: 700 }}>
+                  {(data.productivity_risk_score * 100).toFixed(1)}%
+                </div>
+              </div>
             </div>
-            <div style={{ marginTop: 8, opacity: 0.8, fontSize: 12 }}>
+            <div className="wo-muted" style={{ marginTop: 10 }}>
               Generated at: {new Date(data.generated_at).toLocaleString()}
             </div>
           </div>
@@ -137,20 +201,19 @@ export default function PredictPage() {
   );
 }
 
-function Field(props: { label: string; value: string; onChange: (e: any) => void }) {
+function Field(props: {
+  label: string;
+  value: string;
+  onChange: (e: any) => void;
+}) {
   return (
-    <label style={{ display: "grid", gap: 6 }}>
-      <span style={{ fontSize: 13, opacity: 0.85 }}>{props.label}</span>
+    <div className="wo-field">
+      <label className="wo-field-label">{props.label}</label>
       <input
+        className="wo-input"
         value={props.value}
         onChange={props.onChange}
-        style={{
-          padding: "10px 12px",
-          borderRadius: 10,
-          border: "1px solid #333",
-          outline: "none",
-        }}
       />
-    </label>
+    </div>
   );
 }

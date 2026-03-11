@@ -22,6 +22,7 @@ def list_users(db: Session = Depends(get_db)):
         {
             "id": u.id,
             "email": u.email,
+            "full_name": u.full_name,
             "role": u.role,
             "team_id": u.team_id,
             "created_at": u.created_at,

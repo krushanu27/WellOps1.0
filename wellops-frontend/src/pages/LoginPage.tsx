@@ -22,12 +22,9 @@ export function LoginPage() {
     try {
       const data = await login(username, password);
       saveToken(data.access_token);
-
-      // Clear any prior auth error message
       sessionStorage.removeItem("auth_error");
-
       navigate("/app", { replace: true });
-    } catch (err: any) {
+    } catch {
       setError("Invalid credentials");
     } finally {
       setLoading(false);
@@ -35,49 +32,57 @@ export function LoginPage() {
   }
 
   return (
-    <div style={{ maxWidth: 360, margin: "80px auto", padding: 16 }}>
-      <h1 style={{ marginBottom: 12 }}>WellOps</h1>
-
-      {authError === "expired" && (
-        <div style={{ marginBottom: 12, color: "darkred" }}>
-          Your session expired. Please sign in again.
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 12 }}>
-          <input
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            style={{ width: "100%", padding: 10, boxSizing: "border-box" }}
-          />
+    <div className="wo-login-wrapper">
+      <div className="wo-login-card">
+        <div className="wo-login-header">
+          <h1>WellOps</h1>
+          <p>Employee Wellness Platform</p>
         </div>
 
-        <div style={{ marginBottom: 12 }}>
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ width: "100%", padding: 10, boxSizing: "border-box" }}
-          />
+        <div className="wo-login-body">
+          {authError === "expired" && (
+            <div className="wo-error-text">
+              Your session expired. Please sign in again.
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <div className="wo-field">
+              <label className="wo-field-label">Email</label>
+              <input
+                className="wo-input"
+                placeholder="admin@test.com"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="wo-field">
+              <label className="wo-field-label">Password</label>
+              <input
+                className="wo-input"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            {error && <div className="wo-error-text">{error}</div>}
+
+            <button
+              className="wo-btn-primary"
+              type="submit"
+              disabled={loading}
+              style={{ marginTop: 6 }}
+            >
+              {loading ? "Signing in…" : "Sign In"}
+            </button>
+          </form>
         </div>
-
-        {error && (
-          <div style={{ color: "red", marginBottom: 12 }}>{error}</div>
-        )}
-
-        <button
-          type="submit"
-          disabled={loading}
-          style={{ width: "100%", padding: 10 }}
-        >
-          {loading ? "Signing in..." : "Login"}
-        </button>
-      </form>
+      </div>
     </div>
   );
 }

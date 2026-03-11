@@ -8,6 +8,8 @@ import { SurveyDetailPage } from "../../pages/SurveyDetailPage";
 import PredictPage from "../../pages/PredictPage";
 import UsersPage from "../../pages/UsersPage";
 import TeamsPage from "../../pages/TeamsPage";
+import DashboardPage from "../../pages/DashboardPage";
+import PrivacyPage from "../../pages/PrivacyPage";
 
 type Role = "ADMIN" | "MANAGER" | "EMPLOYEE";
 
@@ -19,14 +21,14 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 
 function RequireRole({ children, roles }: { children: React.ReactNode; roles: Role[] }) {
   const { role } = useAuth();
-  if (!role || !roles.includes(role)) return <Navigate to="/app/surveys" replace />;
+  if (!role || !roles.includes(role)) return <Navigate to="/app/dashboard" replace />;
   return <>{children}</>;
 }
 
 export function AppRouter() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/app/surveys" replace />} />
+      <Route path="/" element={<Navigate to="/app/dashboard" replace />} />
 
       <Route path="/login" element={<LoginPage />} />
 
@@ -38,10 +40,12 @@ export function AppRouter() {
           </RequireAuth>
         }
       >
-        <Route index element={<Navigate to="/app/surveys" replace />} />
+        <Route index element={<Navigate to="/app/dashboard" replace />} />
+        <Route path="dashboard" element={<DashboardPage />} />
         <Route path="surveys" element={<SurveysListPage />} />
         <Route path="surveys/:id" element={<SurveyDetailPage />} />
         <Route path="analytics" element={<PredictPage />} />
+        <Route path="privacy" element={<PrivacyPage />} />
 
         <Route
           path="users"
