@@ -14,12 +14,12 @@ export function AppLayout() {
   }
 
   const activeStyle = (isActive: boolean) => ({
-    background: isActive ? "rgba(79, 70, 229, 0.1)" : undefined,
+    background: isActive ? "rgba(79, 70, 229, 0.12)" : undefined,
     color: isActive ? "#4f46e5" : undefined,
   });
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
+    <div className="wo-app-layout">
       <aside className="wo-sidebar">
         <div className="wo-sidebar-brand">WellOps</div>
 
@@ -27,11 +27,12 @@ export function AppLayout() {
           <NavLink to="/app/dashboard" style={({ isActive }) => activeStyle(isActive)}>
             📊 Dashboard
           </NavLink>
+
           <NavLink to="/app/surveys" style={({ isActive }) => activeStyle(isActive)}>
             📋 Surveys
           </NavLink>
 
-          {(role === "ADMIN" || role === "MANAGER") && (
+          {role === "ADMIN" && (
             <NavLink to="/app/users" style={({ isActive }) => activeStyle(isActive)}>
               👤 Users
             </NavLink>
@@ -57,10 +58,10 @@ export function AppLayout() {
         </div>
       </aside>
 
-      <main style={{ flex: 1 }}>
+      <main className="wo-app-main">
         <div className="wo-breadcrumb">{title}</div>
 
-        <div style={{ padding: 18 }}>
+        <div className="wo-app-content">
           <ConsentBanner />
           <Outlet />
         </div>

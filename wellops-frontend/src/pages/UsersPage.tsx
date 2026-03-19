@@ -1,1 +1,1 @@
-export { UsersListPage as default } from "../features/users/UsersListPage";
+export { UsersListPage as default } from "../features/users/UsersPage";

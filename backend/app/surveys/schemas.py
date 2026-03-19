@@ -1,4 +1,3 @@
-# app/surveys/schemas.py
 from __future__ import annotations
 
 from datetime import datetime
@@ -14,6 +13,11 @@ SurveyStatus = Literal["DRAFT", "ARCHIVED"]
 
 
 class SurveyCreate(BaseModel):
+    title: str = Field(min_length=3, max_length=200)
+    description: str | None = None
+
+
+class SurveyUpdate(BaseModel):
     title: str = Field(min_length=3, max_length=200)
     description: str | None = None
 
@@ -81,11 +85,18 @@ class VersionDetailOut(BaseModel):
 
 class AnswerIn(BaseModel):
     question_id: UUID
-    value: dict[str, Any]  # JSONB payload (flexible)
+    value: dict[str, Any]
 
 
 class SubmissionCreate(BaseModel):
     answers: list[AnswerIn] = Field(min_length=1)
+
+
+class PredictionResultOut(BaseModel):
+    burnout_risk_score: float
+    productivity_risk_score: float
+    risk_level: str
+    generated_at: str
 
 
 class SubmissionOut(BaseModel):
@@ -97,3 +108,7 @@ class SubmissionOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class SubmissionWithPredictionOut(SubmissionOut):
+    prediction: PredictionResultOut

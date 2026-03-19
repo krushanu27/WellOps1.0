@@ -6,7 +6,7 @@ import { LoginPage } from "../../pages/LoginPage";
 import { SurveysListPage } from "../../pages/SurveysListPage";
 import { SurveyDetailPage } from "../../pages/SurveyDetailPage";
 import PredictPage from "../../pages/PredictPage";
-import UsersPage from "../../pages/UsersPage";
+import UsersPage from "../../features/users/UsersPage";
 import TeamsPage from "../../pages/TeamsPage";
 import DashboardPage from "../../pages/DashboardPage";
 import PrivacyPage from "../../pages/PrivacyPage";
@@ -50,7 +50,7 @@ export function AppRouter() {
         <Route
           path="users"
           element={
-            <RequireRole roles={["ADMIN", "MANAGER"]}>
+            <RequireRole roles={["ADMIN"]}>
               <UsersPage />
             </RequireRole>
           }

@@ -3,9 +3,16 @@ import { http } from "../../shared/api/http";
 export interface Survey {
   id: string;
   title: string;
-  description?: string;
-  status?: string;
+  description?: string | null;
+  status?: "DRAFT" | "ARCHIVED" | string;
+  created_by_user_id?: string;
   created_at?: string;
+  updated_at?: string;
+}
+
+export interface SurveyPayload {
+  title: string;
+  description?: string | null;
 }
 
 export interface Question {
@@ -28,6 +35,20 @@ export async function fetchSurveys(): Promise<Survey[]> {
 export async function fetchSurveyById(id: string): Promise<Survey> {
   const res = await http.get(`/surveys/${id}`);
   return res.data;
+}
+
+export async function createSurvey(payload: SurveyPayload): Promise<Survey> {
+  const res = await http.post("/surveys", payload);
+  return res.data;
+}
+
+export async function updateSurvey(surveyId: string, payload: SurveyPayload): Promise<Survey> {
+  const res = await http.put(`/surveys/${surveyId}`, payload);
+  return res.data;
+}
+
+export async function deleteSurvey(surveyId: string): Promise<void> {
+  await http.delete(`/surveys/${surveyId}`);
 }
 
 export async function fetchQuestions(surveyId: string, versionId: string): Promise<Question[]> {

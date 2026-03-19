@@ -6,18 +6,35 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth.deps import get_current_user
-from app.database.models import Survey, SurveyVersion, SurveyQuestion, SurveySubmission, SurveyAnswer
+from app.database.models import (
+    Survey,
+    SurveyVersion,
+    SurveyQuestion,
+    SurveySubmission,
+    SurveyAnswer,
+)
 from app.database.session import get_db
 from app.audit.models import AuditLog
 from app.users.models import User
-from app.surveys.schemas import SubmissionCreate
+from app.surveys.schemas import (
+    SubmissionCreate,
+    SubmissionWithPredictionOut,
+    SurveyCreate,
+    SurveyUpdate,
+    SurveyOut,
+)
+from app.surveys.prediction_service import (
+    build_ml_payload,
+    call_ml_prediction,
+    create_prediction_audit_log,
+)
 
 router = APIRouter(prefix="/surveys", tags=["surveys"])
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=SurveyOut)
 def create_survey(
-    title: str,
+    body: SurveyCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -25,31 +42,27 @@ def create_survey(
         raise HTTPException(status_code=403, detail="Not authorized to create surveys")
 
     survey = Survey(
-        title=title,
+        title=body.title,
+        description=body.description,
         status="DRAFT",
         created_by_user_id=current_user.id,
     )
     db.add(survey)
     db.add(
         AuditLog(
-            actor_user_id=current_user.id,
-            actor_role=current_user.role,
+            user_id=current_user.id,
             action="CREATE_SURVEY",
             endpoint="/surveys",
+            status_code=201,
+            meta={
+                "survey_title": body.title,
+            },
         )
     )
     db.commit()
     db.refresh(survey)
 
-    return {
-        "id": str(survey.id),
-        "title": survey.title,
-        "description": survey.description,
-        "status": survey.status,
-        "created_by_user_id": str(survey.created_by_user_id),
-        "created_at": survey.created_at,
-        "updated_at": survey.updated_at,
-    }
+    return survey
 
 
 @router.get("", status_code=status.HTTP_200_OK)
@@ -75,7 +88,7 @@ def list_surveys(
     ]
 
 
-@router.get("/{survey_id}", status_code=status.HTTP_200_OK)
+@router.get("/{survey_id}", status_code=status.HTTP_200_OK, response_model=SurveyOut)
 def get_survey(
     survey_id: UUID,
     db: Session = Depends(get_db),
@@ -85,15 +98,73 @@ def get_survey(
     if not survey:
         raise HTTPException(status_code=404, detail="Survey not found")
 
-    return {
-        "id": str(survey.id),
-        "title": survey.title,
-        "description": survey.description,
-        "status": survey.status,
-        "created_by_user_id": str(survey.created_by_user_id),
-        "created_at": survey.created_at,
-        "updated_at": survey.updated_at,
-    }
+    return survey
+
+
+@router.put("/{survey_id}", status_code=status.HTTP_200_OK, response_model=SurveyOut)
+def update_survey(
+    survey_id: UUID,
+    body: SurveyUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role not in {"MANAGER", "ADMIN"}:
+        raise HTTPException(status_code=403, detail="Not authorized to update surveys")
+
+    survey = db.get(Survey, survey_id)
+    if not survey:
+        raise HTTPException(status_code=404, detail="Survey not found")
+
+    survey.title = body.title
+    survey.description = body.description
+
+    db.add(
+        AuditLog(
+            user_id=current_user.id,
+            action="UPDATE_SURVEY",
+            endpoint=f"/surveys/{survey_id}",
+            status_code=200,
+            meta={
+                "survey_id": str(survey.id),
+                "survey_title": survey.title,
+            },
+        )
+    )
+
+    db.commit()
+    db.refresh(survey)
+    return survey
+
+
+@router.delete("/{survey_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_survey(
+    survey_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role not in {"MANAGER", "ADMIN"}:
+        raise HTTPException(status_code=403, detail="Not authorized to delete surveys")
+
+    survey = db.get(Survey, survey_id)
+    if not survey:
+        raise HTTPException(status_code=404, detail="Survey not found")
+
+    db.add(
+        AuditLog(
+            user_id=current_user.id,
+            action="DELETE_SURVEY",
+            endpoint=f"/surveys/{survey_id}",
+            status_code=204,
+            meta={
+                "survey_id": str(survey.id),
+                "survey_title": survey.title,
+            },
+        )
+    )
+
+    db.delete(survey)
+    db.commit()
+    return None
 
 
 @router.get("/{survey_id}/versions/{version_id}/questions")
@@ -129,7 +200,11 @@ def get_questions(
     ]
 
 
-@router.post("/{survey_id}/versions/{version_id}/submit", status_code=201)
+@router.post(
+    "/{survey_id}/versions/{version_id}/submit",
+    status_code=201,
+    response_model=SubmissionWithPredictionOut,
+)
 def submit_survey(
     survey_id: UUID,
     version_id: UUID,
@@ -137,6 +212,9 @@ def submit_survey(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if current_user.role != "EMPLOYEE":
+        raise HTTPException(403, "Only employees can submit surveys")
+
     version = db.get(SurveyVersion, version_id)
     if not version or str(version.survey_id) != str(survey_id):
         raise HTTPException(404, "Version not found")
@@ -155,6 +233,8 @@ def submit_survey(
     if not current_user.team_id:
         raise HTTPException(400, "You must be assigned to a team before submitting")
 
+    ml_payload = build_ml_payload(db, body.answers)
+
     submission = SurveySubmission(
         id=uuid.uuid4(),
         version_id=version_id,
@@ -165,20 +245,33 @@ def submit_survey(
     db.flush()
 
     for answer in body.answers:
-        db.add(SurveyAnswer(
-            id=uuid.uuid4(),
-            submission_id=submission.id,
-            question_id=answer.question_id,
-            value=answer.value,
-        ))
+        db.add(
+            SurveyAnswer(
+                id=uuid.uuid4(),
+                submission_id=submission.id,
+                question_id=answer.question_id,
+                value=answer.value,
+            )
+        )
+
+    prediction = call_ml_prediction(ml_payload)
+
+    db.add(
+        create_prediction_audit_log(
+            user_id=current_user.id,
+            team_id=current_user.team_id,
+            prediction=prediction,
+        )
+    )
 
     db.commit()
     db.refresh(submission)
 
     return {
-        "id": str(submission.id),
-        "version_id": str(submission.version_id),
-        "user_id": str(submission.user_id),
-        "team_id": str(submission.team_id),
+        "id": submission.id,
+        "version_id": submission.version_id,
+        "user_id": submission.user_id,
+        "team_id": submission.team_id,
         "submitted_at": submission.submitted_at,
+        "prediction": prediction,
     }

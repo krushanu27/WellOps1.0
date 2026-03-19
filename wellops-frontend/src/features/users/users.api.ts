@@ -1,15 +1,57 @@
 import { http } from "../../shared/api/http";
 
-export interface User {
+export type UserRole = "ADMIN" | "MANAGER" | "EMPLOYEE";
+
+export interface UserItem {
   id: string;
   email: string;
-  full_name?: string;
-  role: string;
-  team_id?: string;
-  created_at?: string;
+  role: UserRole;
+  team_id: string | null;
 }
 
-export async function fetchUsers(): Promise<User[]> {
-  const res = await http.get("/users");
-  return res.data;
+export interface TeamOption {
+  id: string;
+  name: string;
+}
+
+export interface CreateUserPayload {
+  email: string;
+  password: string;
+  role: UserRole;
+  team_id: string | null;
+}
+
+export interface UpdateUserPayload {
+  email?: string;
+  password?: string;
+  role?: UserRole;
+  team_id?: string | null;
+}
+
+export async function fetchUsers(): Promise<UserItem[]> {
+  const { data } = await http.get("/users");
+  return data;
+}
+
+export async function createUser(payload: CreateUserPayload): Promise<UserItem> {
+  const { data } = await http.post("/users", payload);
+  return data;
+}
+
+export async function updateUser(userId: string, payload: UpdateUserPayload): Promise<UserItem> {
+  const { data } = await http.put(`/users/${userId}`, payload);
+  return data;
+}
+
+export async function deleteUser(userId: string): Promise<void> {
+  await http.delete(`/users/${userId}`);
+}
+
+/**
+ * Reuse your existing teams endpoint if already present.
+ * Adjust this path only if your backend route differs.
+ */
+export async function fetchTeams(): Promise<TeamOption[]> {
+  const { data } = await http.get("/teams");
+  return data;
 }
