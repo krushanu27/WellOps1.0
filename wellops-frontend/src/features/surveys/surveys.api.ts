@@ -4,7 +4,7 @@ export interface Survey {
   id: string;
   title: string;
   description?: string | null;
-  status?: "DRAFT" | "ARCHIVED" | string;
+  status?: "DRAFT" | "PUBLISHED" | "ARCHIVED" | string;
   created_by_user_id?: string;
   created_at?: string;
   updated_at?: string;
@@ -13,6 +13,14 @@ export interface Survey {
 export interface SurveyPayload {
   title: string;
   description?: string | null;
+}
+
+export interface SurveyVersion {
+  id: string;
+  survey_id: string;
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Question {
@@ -42,7 +50,10 @@ export async function createSurvey(payload: SurveyPayload): Promise<Survey> {
   return res.data;
 }
 
-export async function updateSurvey(surveyId: string, payload: SurveyPayload): Promise<Survey> {
+export async function updateSurvey(
+  surveyId: string,
+  payload: SurveyPayload
+): Promise<Survey> {
   const res = await http.put(`/surveys/${surveyId}`, payload);
   return res.data;
 }
@@ -51,7 +62,17 @@ export async function deleteSurvey(surveyId: string): Promise<void> {
   await http.delete(`/surveys/${surveyId}`);
 }
 
-export async function fetchQuestions(surveyId: string, versionId: string): Promise<Question[]> {
+export async function fetchActiveSurveyVersion(
+  surveyId: string
+): Promise<SurveyVersion> {
+  const res = await http.get(`/surveys/${surveyId}/active-version`);
+  return res.data;
+}
+
+export async function fetchQuestions(
+  surveyId: string,
+  versionId: string
+): Promise<Question[]> {
   const res = await http.get(`/surveys/${surveyId}/versions/${versionId}/questions`);
   return res.data;
 }

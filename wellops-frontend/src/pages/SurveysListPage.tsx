@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../app/providers/AuthProvider";
 import {
@@ -26,15 +27,10 @@ const initialForm: SurveyFormState = {
 
 export function SurveysListPage() {
   const queryClient = useQueryClient();
-  const auth = useAuth();
+  const { role } = useAuth();
 
-  const currentUser =
-    (auth as any).currentUser ??
-    (auth as any).user ??
-    null;
-
-  const canManage =
-    currentUser?.role === "ADMIN" || currentUser?.role === "MANAGER";
+  const canManage = role === "ADMIN" || role === "MANAGER";
+  const canTakeSurvey = role === "EMPLOYEE";
 
   const [form, setForm] = useState<SurveyFormState>(initialForm);
   const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
@@ -131,15 +127,34 @@ export function SurveysListPage() {
   }
 
   if (isLoading) {
-    return <LoadingState title="Surveys" message="Fetching survey list…" />;
+    return (
+      <LoadingState
+        title="Loading surveys"
+        message="Loading surveys..."
+      />
+    );
   }
 
   if (error) {
     return (
       <ErrorState
         title="Failed to load surveys"
-        message="Something went wrong while fetching surveys. Try again."
-        action={<button onClick={() => refetch()}>Retry</button>}
+        message="Something went wrong while loading surveys."
+        action={
+          <button
+            onClick={() => refetch()}
+            style={{
+              padding: "10px 14px",
+              borderRadius: 8,
+              border: "1px solid #d1d5db",
+              background: "#ffffff",
+              color: "#111827",
+              cursor: "pointer",
+            }}
+          >
+            Retry
+          </button>
+        }
       />
     );
   }
@@ -150,21 +165,33 @@ export function SurveysListPage() {
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "baseline",
-          gap: 12,
-          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 16,
+          marginBottom: 16,
         }}
       >
-        <h1 style={{ margin: 0 }}>Surveys</h1>
-
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <div style={{ fontSize: 12, opacity: 0.7 }}>
-            {isFetching ? "Refreshing…" : `${data?.length ?? 0} total`}
-          </div>
-          {canManage && (
-            <button onClick={startCreate}>+ New Survey</button>
-          )}
+        <div>
+          <h1 style={{ margin: 0 }}>Surveys</h1>
+          <p style={{ margin: "6px 0 0 0", color: "#6b7280" }}>
+            {isFetching ? "Refreshing..." : `${data?.length ?? 0} total`}
+          </p>
         </div>
+
+        {canManage && (
+          <button
+            onClick={startCreate}
+            style={{
+              padding: "10px 14px",
+              borderRadius: 8,
+              border: "1px solid #2563eb",
+              background: "#2563eb",
+              color: "#ffffff",
+              cursor: "pointer",
+            }}
+          >
+            + New Survey
+          </button>
+        )}
       </div>
 
       {canManage && showForm && (
@@ -174,25 +201,25 @@ export function SurveysListPage() {
             border: "1px solid #d1d5db",
             borderRadius: 12,
             padding: 16,
-            marginTop: 16,
-            display: "grid",
+            marginBottom: 16,
+            display: "flex",
+            flexDirection: "column",
             gap: 12,
             background: "#ffffff",
             color: "#111827",
             boxShadow: "0 1px 2px rgba(0,0,0,0.06)",
           }}
         >
-          <div style={{ fontWeight: 600, color: "#111827" }}>
+          <h2 style={{ margin: 0 }}>
             {editingSurvey ? "Edit Survey" : "Create Survey"}
-          </div>
+          </h2>
 
           <input
-            type="text"
-            placeholder="Survey title"
             value={form.title}
             onChange={(e) =>
               setForm((prev) => ({ ...prev, title: e.target.value }))
             }
+            placeholder="Survey title"
             style={{
               padding: 10,
               borderRadius: 8,
@@ -204,11 +231,11 @@ export function SurveysListPage() {
           />
 
           <textarea
-            placeholder="Survey description"
             value={form.description}
             onChange={(e) =>
               setForm((prev) => ({ ...prev, description: e.target.value }))
             }
+            placeholder="Survey description"
             rows={4}
             style={{
               padding: 10,
@@ -235,8 +262,12 @@ export function SurveysListPage() {
               }}
             >
               {editingSurvey
-                ? (updateMutation.isPending ? "Updating..." : "Update Survey")
-                : (createMutation.isPending ? "Creating..." : "Create Survey")}
+                ? updateMutation.isPending
+                  ? "Updating..."
+                  : "Update Survey"
+                : createMutation.isPending
+                  ? "Creating..."
+                  : "Create Survey"}
             </button>
 
             <button
@@ -343,6 +374,7 @@ export function SurveysListPage() {
                   >
                     Edit
                   </button>
+
                   <button
                     onClick={() => handleDelete(s)}
                     disabled={deleteMutation.isPending}
@@ -357,6 +389,33 @@ export function SurveysListPage() {
                   >
                     {deleteMutation.isPending ? "Deleting..." : "Delete"}
                   </button>
+                </div>
+              )}
+
+              {canTakeSurvey && s.status === "PUBLISHED" && (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    alignItems: "flex-start",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Link
+                    to={`/app/surveys/${s.id}`}
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: 8,
+                      border: "1px solid #2563eb",
+                      background: "#2563eb",
+                      color: "#ffffff",
+                      textDecoration: "none",
+                      cursor: "pointer",
+                      display: "inline-block",
+                    }}
+                  >
+                    Take Survey
+                  </Link>
                 </div>
               )}
             </div>

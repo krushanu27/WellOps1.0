@@ -73,3 +73,7 @@ def predict(payload: PredictRequest):
         risk_level=level,
         generated_at=datetime.now(timezone.utc).isoformat(),
     )
+
+@app.get("/")
+def root():
+    return {"status": "ok", "service": "WellOps ML service"}

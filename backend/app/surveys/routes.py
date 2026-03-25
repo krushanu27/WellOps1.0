@@ -2,7 +2,7 @@ from uuid import UUID
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, desc
 from sqlalchemy.orm import Session
 
 from app.auth.deps import get_current_user
@@ -99,6 +99,37 @@ def get_survey(
         raise HTTPException(status_code=404, detail="Survey not found")
 
     return survey
+
+
+@router.get("/{survey_id}/active-version", status_code=status.HTTP_200_OK)
+def get_active_survey_version(
+    survey_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    survey = db.get(Survey, survey_id)
+    if not survey:
+        raise HTTPException(status_code=404, detail="Survey not found")
+
+    version = db.execute(
+        select(SurveyVersion)
+        .where(
+            SurveyVersion.survey_id == survey_id,
+            SurveyVersion.status == "PUBLISHED",
+        )
+        .order_by(desc(SurveyVersion.created_at))
+    ).scalars().first()
+
+    if not version:
+        raise HTTPException(status_code=404, detail="No published survey version found")
+
+    return {
+        "id": str(version.id),
+        "survey_id": str(version.survey_id),
+        "status": version.status,
+        "created_at": version.created_at,
+        "updated_at": version.updated_at,
+    }
 
 
 @router.put("/{survey_id}", status_code=status.HTTP_200_OK, response_model=SurveyOut)

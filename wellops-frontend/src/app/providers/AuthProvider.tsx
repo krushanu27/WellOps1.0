@@ -1,16 +1,18 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
 
-type Role = "ADMIN" | "MANAGER" | "EMPLOYEE";
+export type Role = "ADMIN" | "MANAGER" | "EMPLOYEE";
 
 type AuthContextType = {
   token: string | null;
   role: Role | null;
+  isAuthenticated: boolean;
   login: (token: string) => void;
   logout: () => void;
 };
 
 function getRoleFromToken(token: string | null): Role | null {
   if (!token) return null;
+
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
     return payload.role ?? null;
@@ -38,15 +40,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null);
   };
 
-  return (
-    <AuthContext.Provider value={{ token, role, login, logout }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo<AuthContextType>(
+    () => ({
+      token,
+      role,
+      isAuthenticated: !!token,
+      login,
+      logout,
+    }),
+    [token, role]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+  if (!ctx) {
+    throw new Error("useAuth must be used inside AuthProvider");
+  }
   return ctx;
 }
