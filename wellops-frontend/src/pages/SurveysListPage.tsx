@@ -27,12 +27,14 @@ const initialForm: SurveyFormState = {
 
 export function SurveysListPage() {
   const queryClient = useQueryClient();
-  const { role } = useAuth();
+  const auth = useAuth();
+  const currentUser = (auth as any).currentUser ?? (auth as any).user ?? null;
 
-  const canManage = role === "ADMIN" || role === "MANAGER";
-  const canTakeSurvey = role === "EMPLOYEE";
+  const canManage =
+    currentUser?.role === "ADMIN" || currentUser?.role === "MANAGER";
+  const isEmployee = currentUser?.role === "EMPLOYEE";
 
-  const [form, setForm] = useState<SurveyFormState>(initialForm);
+  const [form, setForm] = useState(initialForm);
   const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
   const [showForm, setShowForm] = useState(false);
 
@@ -127,12 +129,7 @@ export function SurveysListPage() {
   }
 
   if (isLoading) {
-    return (
-      <LoadingState
-        title="Loading surveys"
-        message="Loading surveys..."
-      />
-    );
+    return <LoadingState title="Loading surveys" message="Please wait..." />;
   }
 
   if (error) {
@@ -141,17 +138,7 @@ export function SurveysListPage() {
         title="Failed to load surveys"
         message="Something went wrong while loading surveys."
         action={
-          <button
-            onClick={() => refetch()}
-            style={{
-              padding: "10px 14px",
-              borderRadius: 8,
-              border: "1px solid #d1d5db",
-              background: "#ffffff",
-              color: "#111827",
-              cursor: "pointer",
-            }}
-          >
+          <button onClick={() => refetch()}>
             Retry
           </button>
         }
@@ -160,66 +147,52 @@ export function SurveysListPage() {
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 16,
-          marginBottom: 16,
-        }}
-      >
-        <div>
-          <h1 style={{ margin: 0 }}>Surveys</h1>
-          <p style={{ margin: "6px 0 0 0", color: "#6b7280" }}>
-            {isFetching ? "Refreshing..." : `${data?.length ?? 0} total`}
-          </p>
-        </div>
+    <div>
+      <h1 style={{ marginBottom: 8 }}>Surveys</h1>
+      <p style={{ color: "#6b7280", marginBottom: 16 }}>
+        {isFetching ? "Refreshing…" : `${data?.length ?? 0} total`}
+      </p>
 
-        {canManage && (
-          <button
-            onClick={startCreate}
-            style={{
-              padding: "10px 14px",
-              borderRadius: 8,
-              border: "1px solid #2563eb",
-              background: "#2563eb",
-              color: "#ffffff",
-              cursor: "pointer",
-            }}
-          >
-            + New Survey
-          </button>
-        )}
-      </div>
+      {canManage && (
+        <button
+          onClick={startCreate}
+          style={{
+            marginBottom: 16,
+            padding: "10px 14px",
+            borderRadius: 8,
+            border: "1px solid #2563eb",
+            background: "#2563eb",
+            color: "#ffffff",
+            cursor: "pointer",
+          }}
+        >
+          + New Survey
+        </button>
+      )}
 
       {canManage && showForm && (
         <form
           onSubmit={handleSubmit}
           style={{
+            display: "grid",
+            gap: 12,
+            padding: 16,
             border: "1px solid #d1d5db",
             borderRadius: 12,
-            padding: 16,
-            marginBottom: 16,
-            display: "flex",
-            flexDirection: "column",
-            gap: 12,
             background: "#ffffff",
-            color: "#111827",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.06)",
+            marginBottom: 16,
           }}
         >
-          <h2 style={{ margin: 0 }}>
+          <h3 style={{ margin: 0 }}>
             {editingSurvey ? "Edit Survey" : "Create Survey"}
-          </h2>
+          </h3>
 
           <input
             value={form.title}
+            placeholder="Survey title"
             onChange={(e) =>
               setForm((prev) => ({ ...prev, title: e.target.value }))
             }
-            placeholder="Survey title"
             style={{
               padding: 10,
               borderRadius: 8,
@@ -232,10 +205,10 @@ export function SurveysListPage() {
 
           <textarea
             value={form.description}
+            placeholder="Description"
             onChange={(e) =>
               setForm((prev) => ({ ...prev, description: e.target.value }))
             }
-            placeholder="Survey description"
             rows={4}
             style={{
               padding: 10,
@@ -308,118 +281,125 @@ export function SurveysListPage() {
             gap: 10,
           }}
         >
-          {data.map((s) => (
-            <div
-              key={s.id}
-              style={{
-                border: "1px solid #d1d5db",
-                borderRadius: 12,
-                padding: 16,
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 16,
-                background: "#ffffff",
-                color: "#111827",
-                boxShadow: "0 1px 2px rgba(0,0,0,0.06)",
-              }}
-            >
-              <div style={{ flex: 1, color: "#111827" }}>
-                <h3 style={{ margin: "0 0 8px 0", color: "#111827" }}>
-                  {s.title}
-                </h3>
+          {data.map((s) => {
+            const canTakeSurvey = isEmployee && s.status === "PUBLISHED";
 
-                {s.description && (
-                  <p style={{ margin: "0 0 8px 0", color: "#4b5563" }}>
-                    {s.description}
-                  </p>
-                )}
+            return (
+              <div
+                key={s.id}
+                style={{
+                  border: "1px solid #d1d5db",
+                  borderRadius: 12,
+                  padding: 16,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 16,
+                  background: "#ffffff",
+                  color: "#111827",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.06)",
+                }}
+              >
+                <div style={{ flex: 1, color: "#111827" }}>
+                  <h3 style={{ margin: "0 0 8px 0", color: "#111827" }}>
+                    {s.title}
+                  </h3>
+
+                  {s.description && (
+                    <p style={{ margin: "0 0 8px 0", color: "#4b5563" }}>
+                      {s.description}
+                    </p>
+                  )}
+
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#6b7280",
+                      display: "flex",
+                      gap: 12,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <span>Status: {s.status ?? "DRAFT"}</span>
+                    {s.created_at && (
+                      <span>Created: {new Date(s.created_at).toLocaleString()}</span>
+                    )}
+                  </div>
+                </div>
 
                 <div
                   style={{
-                    fontSize: 12,
-                    color: "#6b7280",
                     display: "flex",
-                    gap: 12,
-                    flexWrap: "wrap",
+                    gap: 8,
+                    alignItems: "flex-start",
+                    flexShrink: 0,
                   }}
                 >
-                  <span>Status: {s.status ?? "DRAFT"}</span>
-                  {s.created_at && (
-                    <span>
-                      Created: {new Date(s.created_at).toLocaleString()}
-                    </span>
+                  {canManage && (
+                    <>
+                      <Link
+                        to={`/app/surveys/${s.id}`}
+                        style={{
+                          padding: "10px 14px",
+                          borderRadius: 8,
+                          border: "1px solid #2563eb",
+                          background: "#2563eb",
+                          color: "#ffffff",
+                          textDecoration: "none",
+                        }}
+                      >
+                        View
+                      </Link>
+
+                      <button
+                        onClick={() => startEdit(s)}
+                        style={{
+                          padding: "10px 14px",
+                          borderRadius: 8,
+                          border: "1px solid #d1d5db",
+                          background: "#ffffff",
+                          color: "#111827",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        onClick={() => handleDelete(s)}
+                        disabled={deleteMutation.isPending}
+                        style={{
+                          padding: "10px 14px",
+                          borderRadius: 8,
+                          border: "1px solid #dc2626",
+                          background: "#dc2626",
+                          color: "#ffffff",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                      </button>
+                    </>
+                  )}
+
+                  {canTakeSurvey && (
+                    <Link
+                      to={`/app/surveys/${s.id}`}
+                      style={{
+                        padding: "10px 14px",
+                        borderRadius: 8,
+                        border: "1px solid #16a34a",
+                        background: "#16a34a",
+                        color: "#ffffff",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Take Survey
+                    </Link>
                   )}
                 </div>
               </div>
-
-              {canManage && (
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 8,
-                    alignItems: "flex-start",
-                    flexShrink: 0,
-                  }}
-                >
-                  <button
-                    onClick={() => startEdit(s)}
-                    style={{
-                      padding: "10px 14px",
-                      borderRadius: 8,
-                      border: "1px solid #d1d5db",
-                      background: "#ffffff",
-                      color: "#111827",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    onClick={() => handleDelete(s)}
-                    disabled={deleteMutation.isPending}
-                    style={{
-                      padding: "10px 14px",
-                      borderRadius: 8,
-                      border: "1px solid #dc2626",
-                      background: "#dc2626",
-                      color: "#ffffff",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {deleteMutation.isPending ? "Deleting..." : "Delete"}
-                  </button>
-                </div>
-              )}
-
-              {canTakeSurvey && s.status === "PUBLISHED" && (
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 8,
-                    alignItems: "flex-start",
-                    flexShrink: 0,
-                  }}
-                >
-                  <Link
-                    to={`/app/surveys/${s.id}`}
-                    style={{
-                      padding: "10px 14px",
-                      borderRadius: 8,
-                      border: "1px solid #2563eb",
-                      background: "#2563eb",
-                      color: "#ffffff",
-                      textDecoration: "none",
-                      cursor: "pointer",
-                      display: "inline-block",
-                    }}
-                  >
-                    Take Survey
-                  </Link>
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

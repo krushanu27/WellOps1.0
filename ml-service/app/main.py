@@ -25,7 +25,7 @@ def load_models():
 
 class PredictRequest(BaseModel):
     workload: float = Field(..., ge=0, le=10)
-    overtime_hours: float = Field(..., ge=0, le=40)
+    overtime_hours: float = Field(..., ge=0, le=80)
     stress_score: float = Field(..., ge=0, le=10)
     sleep_quality: float = Field(..., ge=0, le=10)
     mood: float = Field(..., ge=0, le=10)

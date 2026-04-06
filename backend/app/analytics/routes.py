@@ -1,12 +1,9 @@
-# app/analytics/routes.py
 from __future__ import annotations
-
 from datetime import datetime
 from typing import Any, Dict, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
@@ -17,7 +14,7 @@ from app.analytics.schemas import TeamSurveyAggregate, QuestionAggregate
 from app.users.models import Team
 from app.database import models as survey_models
 from app.analytics.schemas import PredictRequest, PredictResponse
-from app.analytics.service import score_risks, generated_at
+from app.surveys.prediction_service import call_ml_prediction
 from app.audit.service import log_audit
 from app.users.models import User
 
@@ -78,8 +75,7 @@ def get_team_survey_aggregate(
         answers = db.execute(
             select(survey_models.SurveyAnswer.value).join(
                 survey_models.SurveySubmission,
-                survey_models.SurveyAnswer.submission_id
-                == survey_models.SurveySubmission.id,
+                survey_models.SurveyAnswer.submission_id == survey_models.SurveySubmission.id,
             ).where(
                 survey_models.SurveySubmission.version_id == version_id,
                 survey_models.SurveySubmission.team_id == team_id,
@@ -94,14 +90,12 @@ def get_team_survey_aggregate(
                 "min": min(values) if values else None,
                 "max": max(values) if values else None,
             }
-
         elif q.type in ("SINGLE_CHOICE", "MULTI_CHOICE"):
             counts: dict[str, int] = {}
             for a in answers:
                 for choice in a.get("choices", []):
                     counts[choice] = counts.get(choice, 0) + 1
             aggregate = counts
-
         else:  # TEXT
             aggregate = {
                 "note": "Free-text responses are not aggregated for privacy"
@@ -123,6 +117,8 @@ def get_team_survey_aggregate(
         respondent_count=respondent_count,
         questions=aggregates,
     )
+
+
 @router.post("/predict", response_model=PredictResponse)
 def predict(
     payload: PredictRequest,
@@ -195,13 +191,21 @@ def predict(
 
     # ADMIN: no extra restrictions
 
-    burnout, productivity, level = score_risks(payload.features)
+    prediction = call_ml_prediction(
+        {
+            "workload": float(payload.features.workload),
+            "overtime_hours": float(payload.features.overtime_hours),
+            "stress_score": float(payload.features.stress_score),
+            "sleep_quality": float(payload.features.sleep_quality),
+            "mood": float(payload.features.mood),
+        }
+    )
 
     resp = PredictResponse(
-        burnout_risk_score=burnout,
-        productivity_risk_score=productivity,
-        risk_level=level,
-        generated_at=generated_at(),
+        burnout_risk_score=prediction["burnout_risk_score"],
+        productivity_risk_score=prediction["productivity_risk_score"],
+        risk_level=prediction["risk_level"],
+        generated_at=prediction["generated_at"],
     )
 
     log_audit(
@@ -214,11 +218,13 @@ def predict(
             "target_user_id": str(target_user_id),
             "target_team_id": str(target_team_id) if target_team_id else None,
             "survey_version_id": str(payload.survey_version_id) if payload.survey_version_id else None,
-            "risk_level": level,
+            "risk_level": prediction["risk_level"],
         },
     )
 
     return resp
+
+
 class PredictFeatures(BaseModel):
     workload: float = Field(..., ge=0, le=10)
     overtime_hours: float = Field(..., ge=0, le=80)
