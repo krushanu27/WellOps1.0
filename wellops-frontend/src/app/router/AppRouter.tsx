@@ -19,9 +19,17 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function RequireRole({ children, roles }: { children: React.ReactNode; roles: Role[] }) {
+function RequireRole({
+  children,
+  roles,
+}: {
+  children: React.ReactNode;
+  roles: Role[];
+}) {
   const { role } = useAuth();
-  if (!role || !roles.includes(role)) return <Navigate to="/app/dashboard" replace />;
+  if (!role || !roles.includes(role)) {
+    return <Navigate to="/app/dashboard" replace />;
+  }
   return <>{children}</>;
 }
 
@@ -29,7 +37,6 @@ export function AppRouter() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/app/dashboard" replace />} />
-
       <Route path="/login" element={<LoginPage />} />
 
       <Route

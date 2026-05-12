@@ -18,21 +18,47 @@ import {
 type SurveyFormState = {
   title: string;
   description: string;
+  survey_type: "GENERAL" | "PREDICTION";
 };
 
 const initialForm: SurveyFormState = {
   title: "",
   description: "",
+  survey_type: "GENERAL",
 };
+
+function StatusBadge({
+  label,
+  color,
+  background,
+}: {
+  label: string;
+  color: string;
+  background: string;
+}) {
+  return (
+    <span
+      style={{
+        padding: "4px 8px",
+        borderRadius: 999,
+        fontSize: 12,
+        fontWeight: 600,
+        color,
+        background,
+        border: `1px solid ${color}`,
+      }}
+    >
+      {label}
+    </span>
+  );
+}
 
 export function SurveysListPage() {
   const queryClient = useQueryClient();
-  const auth = useAuth();
-  const currentUser = (auth as any).currentUser ?? (auth as any).user ?? null;
+  const { role } = useAuth();
 
-  const canManage =
-    currentUser?.role === "ADMIN" || currentUser?.role === "MANAGER";
-  const isEmployee = currentUser?.role === "EMPLOYEE";
+  const canManage = role === "ADMIN" || role === "MANAGER";
+  const isEmployee = role === "EMPLOYEE";
 
   const [form, setForm] = useState(initialForm);
   const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
@@ -63,7 +89,11 @@ export function SurveysListPage() {
       payload,
     }: {
       surveyId: string;
-      payload: { title: string; description?: string | null };
+      payload: {
+        title: string;
+        description?: string | null;
+        survey_type?: "GENERAL" | "PREDICTION";
+      };
     }) => updateSurvey(surveyId, payload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["surveys"] });
@@ -95,6 +125,7 @@ export function SurveysListPage() {
     setForm({
       title: survey.title,
       description: survey.description ?? "",
+      survey_type: survey.survey_type === "PREDICTION" ? "PREDICTION" : "GENERAL",
     });
     setShowForm(true);
   }
@@ -110,6 +141,7 @@ export function SurveysListPage() {
     const payload = {
       title: trimmedTitle,
       description: trimmedDescription || null,
+      survey_type: form.survey_type,
     };
 
     if (editingSurvey) {
@@ -137,11 +169,7 @@ export function SurveysListPage() {
       <ErrorState
         title="Failed to load surveys"
         message="Something went wrong while loading surveys."
-        action={
-          <button onClick={() => refetch()}>
-            Retry
-          </button>
-        }
+        action={<button onClick={() => refetch()}>Retry</button>}
       />
     );
   }
@@ -221,6 +249,27 @@ export function SurveysListPage() {
             }}
           />
 
+          <select
+            value={form.survey_type}
+            onChange={(e) =>
+              setForm((prev) => ({
+                ...prev,
+                survey_type: e.target.value as "GENERAL" | "PREDICTION",
+              }))
+            }
+            style={{
+              padding: 10,
+              borderRadius: 8,
+              border: "1px solid #d1d5db",
+              background: "#ffffff",
+              color: "#111827",
+              outline: "none",
+            }}
+          >
+            <option value="GENERAL">General Survey</option>
+            <option value="PREDICTION">Prediction Survey</option>
+          </select>
+
           <div style={{ display: "flex", gap: 8 }}>
             <button
               type="submit"
@@ -282,7 +331,11 @@ export function SurveysListPage() {
           }}
         >
           {data.map((s) => {
-            const canTakeSurvey = isEmployee && s.status === "PUBLISHED";
+            const employeeCanOpen = isEmployee && !!s.latest_version_id;
+            const shouldTakeLatest =
+              isEmployee &&
+              !!s.latest_version_id &&
+              (!s.has_submitted_latest || !!s.new_version_available);
 
             return (
               <div
@@ -317,12 +370,50 @@ export function SurveysListPage() {
                       display: "flex",
                       gap: 12,
                       flexWrap: "wrap",
+                      alignItems: "center",
                     }}
                   >
                     <span>Status: {s.status ?? "DRAFT"}</span>
+
+                    <span>
+                      Type: {s.survey_type === "PREDICTION" ? "Prediction" : "General"}
+                    </span>
+
+                    {typeof s.latest_version_number === "number" && (
+                      <span>Latest version: v{s.latest_version_number}</span>
+                    )}
+
                     {s.created_at && (
                       <span>Created: {new Date(s.created_at).toLocaleString()}</span>
                     )}
+
+                    {isEmployee && s.new_version_available && (
+                      <StatusBadge
+                        label="New Version Available"
+                        color="#2563eb"
+                        background="#dbeafe"
+                      />
+                    )}
+
+                    {isEmployee &&
+                      !s.new_version_available &&
+                      s.has_submitted_latest && (
+                        <StatusBadge
+                          label="Submitted"
+                          color="#15803d"
+                          background="#dcfce7"
+                        />
+                      )}
+
+                    {isEmployee &&
+                      !!s.latest_version_id &&
+                      !s.has_submitted_latest && (
+                        <StatusBadge
+                          label="Pending"
+                          color="#b45309"
+                          background="#fef3c7"
+                        />
+                      )}
                   </div>
                 </div>
 
@@ -381,19 +472,21 @@ export function SurveysListPage() {
                     </>
                   )}
 
-                  {canTakeSurvey && (
+                  {isEmployee && employeeCanOpen && (
                     <Link
                       to={`/app/surveys/${s.id}`}
                       style={{
                         padding: "10px 14px",
                         borderRadius: 8,
-                        border: "1px solid #16a34a",
-                        background: "#16a34a",
+                        border: shouldTakeLatest
+                          ? "1px solid #16a34a"
+                          : "1px solid #2563eb",
+                        background: shouldTakeLatest ? "#16a34a" : "#2563eb",
                         color: "#ffffff",
                         textDecoration: "none",
                       }}
                     >
-                      Take Survey
+                      {shouldTakeLatest ? "Take Survey" : "Open"}
                     </Link>
                   )}
                 </div>
