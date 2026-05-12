@@ -25,3 +25,16 @@ Thumbs.db
 .idea/
 *.exe
 ml-service/training/*.exe
+
+# Private project docs
+implementation_plan.md
+task.md
+WellOps_MCA_Major_Project_Report*
+
+# Diagrams
+diagrams/
+*.drawio
+*.png
+*.jpg
+*.jpeg
+*.pdf
